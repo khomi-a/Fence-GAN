@@ -22,7 +22,7 @@ parser.add_argument("--beta", type=float, default=15, help="losses: beta")
 parser.add_argument("--gamma", type=float, default=0.1, help="losses: gamma")
 parser.add_argument("--v_animate", type=int, default=1000, help="animation verbosity")
 parser.add_argument("--fps", type=int, default=2, help="animation fps")
-parser.add_argument("--make_video", type=bool, default=True, help="True if prefer video output")
+parser.add_argument("--make_video", type=bool, default=False, help="True if want to get video output")
 
 
 opt = parser.parse_args()
@@ -108,10 +108,11 @@ class Discriminator(nn.Module):
         x = self.fc3(x)
         return nn.Sigmoid()(x)
 
-# Generator Hyperparameters###
+
+# Generator hyperparameters
 alpha = opt.alpha
 beta = opt.beta
-# Discriminator Hyperparameters###
+# Discriminator hyperparameters
 gamma = opt.gamma
 
 # Loss function
@@ -132,7 +133,6 @@ batch_size = opt.batch_size
 
 def pretrain():
     for epoch in range(20):
-        # Configure input
         real_data_batch = Tensor(real_data(batch_size))
         fake_data_batch = generator(Tensor(noise_data(batch_size)))
 
@@ -149,46 +149,38 @@ pictures_path = './pictures' + f'_al={alpha}_bt={beta}_gm={gamma}'
 if os.path.exists(pictures_path):
     rmtree(pictures_path)
 os.makedirs(pictures_path)
-hyperparametrs = (alpha, beta, gamma)
+hyperparameters = (alpha, beta, gamma)
 
 
 def train():
     for i, epoch in enumerate(tqdm(range(n_epochs))):
-        # Configure input
         real_data_batch = Tensor(real_data(batch_size))
         fake_data_batch = generator(Tensor(noise_data(batch_size)))
 
-        # ---------------------
         #  Train Discriminator
-        # ---------------------
 
         optimizer_D.zero_grad()
-
-        # Measure discriminator's ability to classify real from generated samples
         d_loss = disc_loss(discriminator(real_data_batch), discriminator(fake_data_batch))
 
         d_loss.backward()
         optimizer_D.step()
 
-        # -----------------
         #  Train Generator
-        # -----------------
-        # for _ in range(2):
-        fake_data_batch = generator(Tensor(noise_data(batch_size)))
-        optimizer_G.zero_grad()
 
-        # Loss measures generator's ability to fool the discriminator
+        optimizer_G.zero_grad()
+        fake_data_batch = generator(Tensor(noise_data(batch_size)))
         g_loss = gen_loss(discriminator(fake_data_batch), fake_data_batch)
 
         g_loss.backward()
         optimizer_G.step()
 
         if epoch % v_animate == 0:
-            animate(generator, discriminator, epoch, v_animate, path=pictures_path, hyperparams=hyperparametrs)
+            animate(generator, discriminator, epoch, v_animate, path=pictures_path, hyperparams=hyperparameters)
 
 
 pretrain()
 print('Pretraining done. Training started:')
+
 try:
     train()
 except RuntimeError:
